@@ -9,7 +9,7 @@ module.exports = { formatOrder };
 ---- EXERCISE 2 ------------------------------------------------
 Remove the // at the start of each line below, then push.
 
-function receipt(name prices) {
+function receipt(name, prices) {
   var total = totalPrice(prices);
   if (prices.length == 0) {
     return name + ' ordered nothing';
