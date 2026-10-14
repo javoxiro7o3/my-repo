@@ -6,8 +6,6 @@ function formatOrder(name, prices) {
 
 module.exports = { formatOrder };
 
----- EXERCISE 2 ------------------------------------------------
-Remove the // at the start of each line below, then push.
 
 function receipt(name, prices) {
   var total = totalPrice(prices);
