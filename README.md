@@ -1,4 +1,4 @@
-# DevOps Akademiya 1.0.0 — Windows o'rnatuvchi
+# DevOps Akademiya 1.0.1 — Windows o'rnatuvchi
 
 GitHub 100 MB dan katta faylni qabul qilmaydi, shuning uchun o'rnatuvchi 3 qismga bo'lingan.
 
@@ -8,7 +8,7 @@ GitHub 100 MB dan katta faylni qabul qilmaydi, shuning uchun o'rnatuvchi 3 qismg
    - DevOps-Akademiya-Setup.exe.003
    - birlashtir.bat
 2. Hammasini **bitta papkaga** qo'ying (masalan, Yuklanmalar).
-3. `birlashtir.bat` ni ikki marta bosing → `DevOps Akademiya-Setup-1.0.0.exe` paydo bo'ladi.
+3. `birlashtir.bat` ni ikki marta bosing → `DevOps Akademiya-Setup-1.0.1.exe` paydo bo'ladi.
 4. Uni ishga tushiring. SmartScreen chiqsa: **More info → Run anyway**.
 
-SHA256: `96ae1e7ac82c3f9e3c7130b01993cbc438a8e0e523c83378c28ecd39a8826583`
+SHA256: `2815f7a9978c047970a801fb9eb28e89605896309047cd75d22d683eafd64994`
