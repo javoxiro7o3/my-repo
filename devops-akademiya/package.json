@@ -1,7 +1,7 @@
 {
   "name": "devops-akademiya",
   "productName": "DevOps Akademiya",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "O'zbek tilidagi chuqur DevOps o'quv dasturi — Gemini AI-ustoz bilan",
   "author": "DevOps Akademiya",
   "license": "MIT",
@@ -134,6 +134,7 @@
     },
     "portable": {
       "artifactName": "${productName}-Portable-${version}.${ext}"
-    }
+    },
+    "publish": null
   }
 }

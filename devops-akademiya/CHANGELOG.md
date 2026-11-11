@@ -2,6 +2,17 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/) · Versiyalash: [SemVer](https://semver.org/)
 
+## [1.0.1] — 2026-11-11
+
+### Tuzatildi
+- **API kalit xatolari tushunarsiz edi.** Google qaytargan asl sabab endi ilovada ko'rsatiladi (kalit matndan yashiriladi). Quyidagi holatlar alohida aniqlanadi:
+  hudud qo'llab-quvvatlanmaydi (`region`), "Generative Language API" yoqilmagan (`disabled`), noto'g'ri kalit 400 bilan kelgan holat (`key`).
+- **429 `limit: 0`** (bu model yoki hudud uchun bepul tarif yo'q) holatida ilova avval "kalit to'g'ri" deb, keyin abadiy qayta urinardi. Endi darhol `quota` xatosi beradi va boshqa model tanlashni maslahat qiladi.
+- Xato matnlari bir necha qatorli bo'lishi va nusxa olinishi mumkin.
+
+### Qo'shildi
+- `tests/e2e/keyerrors.spec.ts`: soxta Gemini server orqali xato xabarlarini UI da tekshirish. 5 ta yangi birlik test (jami 148).
+
 ## [1.0.0] — 2026-11-11
 
 Birinchi chiqarilgan versiya.

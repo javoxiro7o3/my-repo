@@ -98,7 +98,7 @@ export function Empty({ icon, title, desc, action }: { icon: React.ReactNode; ti
     <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-12 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-2xl text-accent">{icon}</div>
       <div className="text-[15px] font-semibold">{title}</div>
-      {desc ? <p className="max-w-md text-sm leading-relaxed text-muted">{desc}</p> : null}
+      {desc ? <p className="max-w-md whitespace-pre-line break-words text-sm leading-relaxed text-muted select-text">{desc}</p> : null}
       {action}
     </div>
   )

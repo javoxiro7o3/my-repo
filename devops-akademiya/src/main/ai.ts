@@ -40,7 +40,7 @@ export async function testKey(key: string, model: string): Promise<{ ok: boolean
     await streamGemini({ key, model, baseUrl: baseUrl(), maxRetries: 1, onChunk: () => {}, body: { contents: [{ role: 'user', parts: [{ text: 'Faqat "OK" deb javob ber.' }] }], generationConfig: { maxOutputTokens: 16, temperature: 0 } } })
     return { ok: true, message: 'Kalit ishlayapti ✓' }
   } catch (e) {
-    if (e instanceof GeminiError) return { ok: e.code === 'rate', message: e.code === 'rate' ? 'Kalit to\'g\'ri, lekin hozir limit tugagan (429). Saqlash mumkin.' : e.message }
+    if (e instanceof GeminiError) return { ok: e.code === 'rate', message: e.code === 'rate' ? `Kalit to'g'ri, lekin hozir limit tugagan (429). Saqlash mumkin.\n\n${e.message}` : e.message }
     return { ok: false, message: ERR_TEXT.unknown }
   }
 }

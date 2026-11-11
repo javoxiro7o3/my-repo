@@ -74,7 +74,7 @@ export type AiEvent =
   | { id: string; type: 'chunk'; text: string }
   | { id: string; type: 'status'; state: 'waiting'; seconds: number; attempt: number }
   | { id: string; type: 'done'; text: string; cached: boolean }
-  | { id: string; type: 'error'; code: 'key' | 'rate' | 'offline' | 'model' | 'nokey' | 'blocked' | 'unknown'; message: string }
+  | { id: string; type: 'error'; code: 'key' | 'rate' | 'offline' | 'model' | 'nokey' | 'blocked' | 'region' | 'quota' | 'disabled' | 'unknown'; message: string }
 
 export interface Note { id: number; lessonId: number; section: string; quote: string; note: string; color: string; createdAt: number }
 export interface SrsCard { id: number; lessonId: number; front: string; back: string; ef: number; interval: number; reps: number; due: number }

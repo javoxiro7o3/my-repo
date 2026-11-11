@@ -124,7 +124,7 @@ export function KeyForm({ onSaved, compact }: { onSaved?: () => void; compact?: 
         <Button onClick={test} disabled={key.trim().length < 20 || state === 'busy'}>{state === 'busy' ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />} Tekshirish</Button>
         <Button variant="primary" onClick={save} disabled={key.trim().length < 20 || state === 'busy'}>Saqlash</Button>
       </div>
-      {msg && <p role="status" className={cn('flex items-center gap-1.5 text-[13px]', state === 'ok' ? 'text-ok' : 'text-bad')}>{state === 'ok' ? <CheckCircle2 size={14} /> : <XCircle size={14} />} {msg}</p>}
+      {msg && <p role="status" className={cn('flex items-start gap-1.5 whitespace-pre-line break-words text-[13px] select-text', state === 'ok' ? 'text-ok' : 'text-bad')}>{state === 'ok' ? <CheckCircle2 size={14} className="mt-0.5 shrink-0" /> : <XCircle size={14} className="mt-0.5 shrink-0" />} <span className="min-w-0">{msg}</span></p>}
       {!compact && <p className="text-[13px] leading-relaxed text-muted">Kalit <b>faqat shu kompyuterda</b>, operatsion tizim shifrlashi (Windows DPAPI) bilan saqlanadi. U interfeys qismiga (renderer) hech qachon uzatilmaydi, loglarga va eksportga tushmaydi. Kalitni bepul olish: <button className="inline-flex items-center gap-1 text-accent underline" onClick={() => invoke('app:openExternal', 'https://aistudio.google.com/app/apikey')}>Google AI Studio <ExternalLink size={11} /></button></p>}
     </div>
   )

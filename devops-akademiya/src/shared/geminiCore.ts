@@ -7,7 +7,7 @@ export interface GeminiBody {
   contents: { role: 'user' | 'model'; parts: { text: string }[] }[]
   generationConfig?: Record<string, unknown>
 }
-export type ErrCode = 'key' | 'rate' | 'offline' | 'model' | 'blocked' | 'unknown'
+export type ErrCode = 'key' | 'rate' | 'offline' | 'model' | 'blocked' | 'region' | 'quota' | 'disabled' | 'unknown'
 export class GeminiError extends Error {
   constructor(public code: ErrCode, message: string, public status?: number) { super(message) }
 }
@@ -35,6 +35,9 @@ export const ERR_TEXT: Record<ErrCode | 'nokey', string> = {
   offline: 'Internet aloqasi yo\'q — oflayn rejim. Tayyor darslar va keshlangan javoblar ishlayveradi.',
   model: 'Model topilmadi. Sozlamalarda model nomini tekshiring (masalan: gemini-2.5-flash).',
   blocked: 'Javob xavfsizlik filtri tomonidan to\'xtatildi. Savolni boshqacha ifodalab ko\'ring.',
+  region: 'Gemini API sizning hududingizda (yoki tarmog\'ingiz IP manzilida) ishlamaydi. Boshqa tarmoqdan urinib ko\'ring.',
+  quota: 'Bu kalit uchun tanlangan modelda bepul limit yo\'q (limit: 0). Sozlamalarda gemini-2.5-flash yoki gemini-2.5-flash-lite ni tanlang yoki Google AI Studio\'da billing yoqing.',
+  disabled: 'Kalit tegishli Google Cloud loyihasida "Generative Language API" yoqilmagan. Kalitni aistudio.google.com da qayta yarating.',
   unknown: 'Kutilmagan xato yuz berdi. Qayta urinib ko\'ring.',
   nokey: 'Gemini API kaliti kiritilmagan. Sozlamalar → API kalit bo\'limida kiriting.'
 }
@@ -78,18 +81,18 @@ export async function streamGemini(o: StreamOpts): Promise<StreamResult> {
       throw new GeminiError('offline', ERR_TEXT.offline)
     }
     if (res.status === 429 || res.status === 503 || res.status === 500) {
-      if (attempt >= max) throw new GeminiError('rate', ERR_TEXT.rate, res.status)
+      // limit: 0 — kutish yordam bermaydi (bepul tarif bu model/hudud uchun yo'q): darhol to'xtaymiz
+      const detail = res.status === 429 ? await errorDetail(res) : ''
+      if (/limit:\s*0\b/.test(detail)) throw new GeminiError('quota', withDetail(ERR_TEXT.quota, detail), 429)
+      if (attempt >= max) throw new GeminiError('rate', withDetail(ERR_TEXT.rate, detail), res.status)
       const ms = backoffMs(attempt, Number(res.headers.get('retry-after')) || undefined)
       o.onWait?.(Math.ceil(ms / 1000), attempt + 1)
       await sleep(ms)
       continue
     }
     if (!res.ok) {
-      let detail = ''
-      try { detail = String((await res.json())?.error?.message ?? '') } catch { /* tana yo'q */ }
-      if (res.status === 401 || res.status === 403 || (res.status === 400 && /api key/i.test(detail))) throw new GeminiError('key', ERR_TEXT.key, res.status)
-      if (res.status === 404) throw new GeminiError('model', ERR_TEXT.model, res.status)
-      throw new GeminiError('unknown', `${ERR_TEXT.unknown} (HTTP ${res.status})`, res.status)
+      const detail = await errorDetail(res)
+      throw classifyHttpError(res.status, detail)
     }
     if (!res.body) throw new GeminiError('unknown', ERR_TEXT.unknown)
     let text = '', inTokens = 0, outTokens = 0, blocked = false
@@ -105,6 +108,30 @@ export async function streamGemini(o: StreamOpts): Promise<StreamResult> {
     if (!outTokens) outTokens = Math.ceil(text.length / 4)
     return { text, inTokens, outTokens }
   }
+}
+
+async function errorDetail(res: Response): Promise<string> {
+  try {
+    const raw = await res.text()
+    try {
+      const e = JSON.parse(raw)?.error
+      return [e?.status, e?.message].filter(Boolean).join(': ') || raw.slice(0, 300)
+    } catch { return raw.slice(0, 300) }
+  } catch { return '' }
+}
+const withDetail = (msg: string, detail: string) => (detail ? `${msg}\n\nGoogle javobi: ${redact(detail).slice(0, 400)}` : msg)
+
+/** HTTP xatosini foydalanuvchiga tushunarli sababga aylantiradi (Google ning asl xabari ham qo'shiladi) */
+export function classifyHttpError(status: number, detail: string): GeminiError {
+  const d = detail.toLowerCase()
+  const code: ErrCode =
+    /location is not supported|not available in your (country|region)|unsupported_location/.test(d) ? 'region'
+      : /service_disabled|has not been used in project|api has not been used|is disabled/.test(d) ? 'disabled'
+        : status === 401 || status === 403 || /api key not valid|api_key_invalid|api key expired|invalid api key/.test(d) ? 'key'
+          : status === 404 ? 'model'
+            : 'unknown'
+  const base = code === 'unknown' ? `${ERR_TEXT.unknown} (HTTP ${status})` : ERR_TEXT[code]
+  return new GeminiError(code, withDetail(base, detail), status)
 }
 
 /** Kesh kaliti: lesson_id + section + model + prompt_version (+ qo'shimcha) */

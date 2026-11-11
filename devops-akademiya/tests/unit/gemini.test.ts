@@ -93,3 +93,30 @@ describe('promptlar', () => {
   })
   it('71-dars: Nexus eslatmasi promptga kiradi', () => { expect(sectionPrompt(lessonById(71)!, 'commands')).toMatch(/Nexus/) })
 })
+
+describe('Google xato sabablarini aniqlash', () => {
+  const run = (status: number, payload: unknown) => streamGemini({ key: 'K', model: 'm', body, maxRetries: 3, fetchImpl: (async () => new Response(JSON.stringify(payload), { status })) as any, onChunk: () => {}, sleep: async () => {} })
+  const err = (status: string, message: string) => ({ error: { status, message } })
+
+  it('hudud qo\'llab-quvvatlanmasa "region" va Google xabari ko\'rsatiladi', async () => {
+    const p = run(400, err('FAILED_PRECONDITION', 'User location is not supported for the API use.'))
+    await expect(p).rejects.toMatchObject({ code: 'region' })
+    await expect(run(400, err('FAILED_PRECONDITION', 'User location is not supported for the API use.'))).rejects.toThrow(/Google javobi: FAILED_PRECONDITION: User location/)
+  })
+  it('API yoqilmagan bo\'lsa "disabled"', async () => {
+    await expect(run(403, err('PERMISSION_DENIED', 'Generative Language API has not been used in project 123 before or it is disabled.'))).rejects.toMatchObject({ code: 'disabled' })
+  })
+  it('noto\'g\'ri kalit 400 bilan kelsa ham "key"', async () => {
+    await expect(run(400, err('INVALID_ARGUMENT', 'API key not valid. Please pass a valid API key.'))).rejects.toMatchObject({ code: 'key' })
+  })
+  it('429 limit: 0 — qayta urinmasdan darhol "quota"', async () => {
+    let n = 0
+    const fetchImpl = (async () => { n++; return new Response(JSON.stringify(err('RESOURCE_EXHAUSTED', 'Quota exceeded for metric: generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro')), { status: 429 }) }) as any
+    await expect(streamGemini({ key: 'K', model: 'm', body, maxRetries: 5, fetchImpl, onChunk: () => {}, sleep: async () => {} })).rejects.toMatchObject({ code: 'quota' })
+    expect(n).toBe(1)
+  })
+  it('noma\'lum xatoda HTTP kodi va Google xabari, kalit esa yashiriladi', async () => {
+    const p = run(400, err('INVALID_ARGUMENT', 'Bad thing with AIzaSyA1234567890abcdefghijklmnop'))
+    await expect(p).rejects.toThrow(/HTTP 400[\s\S]*\[KALIT YASHIRILDI\]/)
+  })
+})
