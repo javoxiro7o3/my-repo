@@ -1,0 +1,212 @@
+import { L } from './_h.mjs'
+export default [
+L(55, 11, 'HPA, Cluster Autoscaler, KEDA. Helm chart yozish', 'Yuklamaga qarab masshtablash va ilovani paketlash.', 90, {
+  v: ['Kubernetes 1.30–1.33', 'metrics-server 0.7', 'KEDA 2.15+', 'Helm 3.15+'],
+  obj: ['HPA formulasini qo\'lda hisoblaysiz', 'Cluster Autoscaler qachon node qo\'shishini bilasiz', 'KEDA bilan hodisaga asoslangan masshtablash va scale-to-zero qilasiz', 'Helm chart yozasiz'],
+  con: ['HPA', 'metrics-server', 'HPA formulasi', 'stabilization window', 'Cluster Autoscaler', 'KEDA', 'ScaledObject', 'scale-to-zero', 'Helm chart', 'values', '_helpers.tpl', 'hooks'],
+  depth: ['HPA sikli (15 s): metrics API → hisob → scale subresource', 'Formula: desired = ceil(current × currentMetric / targetMetric); 10% tolerantlik', 'Foiz requests ga nisbatan — requests siz HPA ishlamaydi', 'metrics-server: kubelet/cAdvisor dan yig\'adi', 'behavior: stabilizationWindowSeconds, scaleUp/scaleDown policy; flapping', 'Custom/external metrikalar', 'Cluster Autoscaler: Pending Pod → node qo\'shish; kam yuklangan node ni o\'chirish; to\'sqinliklar (PDB, local storage)', 'HPA + CA birgalikda zanjiri va kechikishlari', 'KEDA arxitekturasi: operator + metrics adapter; ScaledObject → HPA yaratadi', 'Scaler lar: Redis, Kafka, Prometheus, cron; 0↔1 ni KEDA o\'zi boshqaradi', 'Helm: chart tuzilishi (Chart.yaml, values.yaml, templates/)', 'Go template: .Values, .Release, include, toYaml | nindent, if/range/with', '_helpers.tpl va named template lar', 'Hooks: pre-install, pre-upgrade, post-install; vaznlar', 'helm template/lint/install/upgrade --install/rollback; release Secret da saqlanishi'],
+  glo: [['HPA', 'HorizontalPodAutoscaler — Pod nusxalari sonini metrikaga qarab o\'zgartiruvchi'], ['metrics-server', 'CPU/xotira metrikalarini Metrics API orqali beruvchi komponent'], ['Cluster Autoscaler', 'Node lar sonini avtomatik o\'zgartiruvchi komponent'], ['KEDA', 'Kubernetes Event-Driven Autoscaling — hodisalarga asoslangan masshtablash'], ['scale-to-zero', 'Yuklama yo\'qligida nusxalarni nolga tushirish'], ['Helm', 'Kubernetes uchun paket menejeri'], ['chart', 'Helm paketi — shablonlar va standart qiymatlar to\'plami'], ['release', 'Chart ning klasterga o\'rnatilgan nusxasi']],
+  labs: ['CPU bo\'yicha HPA: yuklama berib, replica o\'sishini kuzating', 'KEDA + Redis list uzunligi bo\'yicha worker masshtablash', 'O\'z ilovangiz uchun Helm chart yozing'],
+  bf: ['HPA "<unknown>/50%": requests yo\'q yoki metrics-server ishlamayapti', 'Replica soni sakramoqda (flapping)', 'Helm shablonida "nil pointer evaluating"'],
+  iv: ['HPA qanday hisoblaydi?', 'HPA va Cluster Autoscaler qanday birga ishlaydi?', 'KEDA HPA dan nimasi bilan farq qiladi?', 'Helm hooks nima?'],
+  rel: [34, 50, 56, 58], tools: ['hpa', 'promql'] }),
+
+L(56, 11, 'Infra helm chart larni ArgoCD ga ko\'chirish. Finalizer muammolari', 'Helm release larni GitOps ga o\'tkazish va "Terminating" da qolgan resurslar.', 75, {
+  v: ['Argo CD 2.12+', 'Helm 3.15+'],
+  obj: ['Mavjud helm release ni uzilishsiz ArgoCD ga o\'tkazasiz', 'Finalizer nima ekanini tushuntirasiz', 'Qotib qolgan resursni xavfsiz tozalaysiz'],
+  con: ['helm → ArgoCD migratsiya', 'finalizer', 'deletionTimestamp', 'Terminating', 'cascade deletion', 'sync options'],
+  depth: ['ArgoCD Helm ni qanday ishlatadi: helm template → kubectl apply (helm release yo\'q)', 'Migratsiya: bir xil nom/qiymatlar bilan Application → diff bo\'sh ekanini tekshirish → helm release Secret ini o\'chirish', 'Multi-source Application: chart + alohida values repo', 'CRD lar: ServerSideApply, Replace sync option lari; katta CRD annotatsiya limiti', 'Finalizer: metadata.finalizers — o\'chirishdan oldin bajarilishi shart tozalash', 'O\'chirish oqimi: deletionTimestamp qo\'yiladi → controller tozalaydi → finalizer ni olib tashlaydi → obyekt yo\'qoladi', 'Qotish sabablari: controller o\'chirilgan, CRD avval o\'chirilgan, tashqi resurs yo\'q', 'Namespace "Terminating": qaysi resurs ushlab turganini topish', 'Xavfsiz patch: avval sababni aniqlash; kubectl patch ... finalizers=null — oxirgi chora va oqibatlari (yetim resurslar)', 'ArgoCD resources-finalizer va kaskadli o\'chirish', 'O\'chirish tartibi: avval custom resurslar, keyin operator/CRD'],
+  glo: [['finalizer', 'Obyekt o\'chirilishidan oldin bajarilishi shart bo\'lgan tozalash belgisi'], ['deletionTimestamp', 'Obyekt o\'chirishga belgilangan vaqt'], ['cascade deletion', 'Egasi o\'chirilganda qaram obyektlarni ham o\'chirish'], ['ServerSideApply', 'O\'zgarishlarni server tomonda birlashtirish usuli']],
+  labs: ['ingress-nginx helm release ni ArgoCD ga o\'tkazing', 'Finalizer li custom resursni qotiring va to\'g\'ri tartibda tozalang'],
+  bf: ['Namespace 20 daqiqadan beri "Terminating"', 'ArgoCD Application o\'chirilganda butun ilova ham o\'chib ketdi'],
+  iv: ['Finalizer nima va nega resurs Terminating da qoladi?', 'Finalizer ni qo\'lda o\'chirishning xavfi?'],
+  rel: [48, 52, 55, 57], tools: [] }),
+
+L(57, 11, 'DigitalOcean da noldan to\'liq K8s infra. Django + Vault. Celery', 'Hamma bo\'laklarni bitta ishlaydigan platformaga yig\'ish.', 100, {
+  v: ['DOKS (Kubernetes 1.30+)', 'Terraform 1.9+', 'Argo CD 2.12+', 'Vault 1.17+'],
+  obj: ['End-to-end arxitekturani chizasiz', 'Terraform → ArgoCD → ilova zanjirini qurasiz', 'Django sirlarini Vault dan olasiz'],
+  con: ['end-to-end arxitektura', 'DOKS', 'bootstrap tartibi', 'App-of-Apps', 'Vault + ESO', 'Django + Celery k8s da'],
+  depth: ['Arxitektura qatlamlari: bulut resurslari → klaster → platforma servislari → ilovalar', 'Terraform: VPC, DOKS klaster, node pool, DNS, Spaces', 'Bootstrap tartibi: ArgoCD → ingress-nginx → cert-manager → ExternalDNS → Vault → ESO → monitoring', 'Sync waves bilan bog\'liqliklar', 'Vault ni klasterda ko\'tarish, K8s auth, policy', 'ESO orqali DATABASE_URL, SECRET_KEY', 'Django: Deployment, migratsiya Job (pre-sync hook), collectstatic', 'Celery worker va beat alohida Deployment; beat replicas=1 (Recreate)', 'Redis va Postgres: managed yoki operator', 'Ingress + TLS + DNS avtomatik', 'CI: image → manifest repo → ArgoCD', 'Tekshirish ro\'yxati: probe, limits, PDB, HPA, alertlar'],
+  glo: [['DOKS', 'DigitalOcean Kubernetes Service — boshqariladigan K8s'], ['bootstrap', 'Tizimni noldan ishga tushirishning boshlang\'ich jarayoni'], ['node pool', 'Bir xil konfiguratsiyali node lar guruhi'], ['sync wave', 'ArgoCD da resurslarni qo\'llash navbati']],
+  labs: ['Terraform bilan DOKS (yoki lokal kind) + ArgoCD bootstrap', 'Django + Celery ni Vault sirlari bilan chiqaring'],
+  bf: ['Migratsiya Job i ESO Secret tayyor bo\'lmasdan ishga tushmoqda', 'Ikki beat nusxasi vazifalarni ikkilantirmoqda'],
+  iv: ['Yangi klasterni noldan qanday tartibda bootstrap qilasiz?', 'K8s da DB migratsiyasini qayerda bajarasiz?'],
+  rel: [20, 47, 54, 58], tools: ['k8smap'] }),
+
+L(58, 11, 'Celery autoscaling (Redis+KEDA+CA). Bir pod — bir task. Cost optimization', 'Navbat uzunligiga qarab masshtablash va xarajatni kamaytirish.', 80, {
+  v: ['KEDA 2.15+', 'Cluster Autoscaler', 'Celery 5.4+'],
+  obj: ['Navbat uzunligi bo\'yicha worker larni masshtablaysiz', '"Bir pod — bir task" andozasini qo\'llaysiz', 'Klaster xarajatini tizimli kamaytirasiz'],
+  con: ['KEDA Redis scaler', 'listLength', 'ScaledJob', 'bir pod — bir task', 'graceful termination', 'spot node', 'right-sizing', 'cost optimization'],
+  depth: ['Nega CPU bo\'yicha HPA navbat uchun yomon: metrika kechikadi', 'KEDA redis scaler: listName, listLength, activationListLength', 'Zanjir: navbat o\'sdi → KEDA → HPA → Pod Pending → CA node qo\'shadi', 'Scale-down muammosi: ishlab turgan vazifa o\'ldiriladi', 'Yechimlar: acks_late + terminationGracePeriodSeconds, yoki ScaledJob', 'Bir pod — bir task: ScaledJob, prefetch=1, --max-tasks-per-child=1', 'Uzun vazifalar va cluster-autoscaler.kubernetes.io/safe-to-evict', 'Xarajat: requests ni haqiqiy iste\'molga moslash (right-sizing)', 'Spot/preemptible node lar va ularga toleration', 'Scale-to-zero node pool', 'Kechasi/dam olish kunlari dev muhitni o\'chirish (cron scaler)', 'Bin packing va bo\'sh node lar; xarajat ko\'rinuvchanligi (OpenCost)'],
+  glo: [['ScaledObject', 'KEDA da Deployment ni masshtablash qoidasi'], ['ScaledJob', 'KEDA da har hodisa uchun Job yaratish qoidasi'], ['spot node', 'Arzon, lekin istalgan payt qaytarib olinishi mumkin bo\'lgan VM'], ['right-sizing', 'Resurs so\'rovlarini haqiqiy ehtiyojga moslash'], ['bin packing', 'Pod larni node larga zich joylash']],
+  labs: ['Redis navbati bo\'yicha 0→N worker masshtablash', 'ScaledJob bilan bir pod — bir task'],
+  bf: ['Scale-down vaqtida uzun vazifalar yarim yo\'lda uzilmoqda', 'Navbat bo\'sh, lekin worker lar 0 ga tushmayapti'],
+  iv: ['Navbat ishlovchilarini qanday masshtablaysiz?', 'K8s xarajatini kamaytirish usullari?'],
+  rel: [20, 55, 57], tools: ['hpa'] }),
+
+L(59, 12, 'Private infra: ansible role, Harbor', 'O\'z ma\'lumot markazingizda infratuzilma: boshlanish.', 75, {
+  v: ['Harbor 2.11+', 'ansible-core 2.17+', 'Docker Compose v2'],
+  obj: ['Private infra va bulut farqlarini, rejalashtirish tamoyillarini bilasiz', 'Harbor ni ansible role bilan o\'rnatasiz', 'Harbor komponentlarini tushunasiz'],
+  con: ['private infra', 'air-gapped', 'Harbor', 'project', 'ansible role', 'ichki CA'],
+  depth: ['Nega private infra: tartibga solish, narx, ma\'lumot suvereniteti; bulutda "tekin" bo\'lgan narsalarni o\'zimiz qilamiz', 'Rejalashtirish: tarmoq segmentlari, IP reja, DNS, vaqt, sertifikatlar', 'Harbor arxitekturasi: core, registry (distribution), jobservice, portal, postgres, redis, trivy', 'O\'rnatish: harbor.yml, install.sh; ansible role ga o\'rash (shablon, idempotentlik)', 'TLS: ichki CA yaratish, CA ni node larga tarqatish (containerd certs.d)', 'Project: public/private, a\'zolar va rollar', 'Image push/pull, containerd/Docker ni private registry ga sozlash', 'Zaxira va yangilash'],
+  glo: [['Harbor', 'Ochiq kodli korporativ konteyner registry (CNCF)'], ['air-gapped', 'Internetdan butunlay ajratilgan muhit'], ['ichki CA', 'Tashkilot ichida sertifikat beruvchi o\'z markazi'], ['project', 'Harbor da image lar va ruxsatlar guruhi']],
+  labs: ['Ichki CA yarating va Harbor ni TLS bilan ansible role orqali o\'rnating', 'containerd ni Harbor ga ishonadigan qilib sozlang'],
+  bf: ['"x509: certificate signed by unknown authority" pull da'],
+  iv: ['Private registry nima uchun kerak?', 'Air-gapped muhitda image larni qanday yetkazasiz?'],
+  rel: [13, 32, 60, 70], tools: [] }),
+
+L(60, 12, 'Tarmoqni bo\'lish: Firewall/VLAN/VXLAN. RKE2. Rancher', 'Segmentatsiya usullari va sertifikatlangan K8s distributivlari.', 85, {
+  v: ['RKE2 1.30+', 'Rancher 2.9+'],
+  obj: ['VLAN va VXLAN ni frame darajasida tushuntirasiz', 'K8s distributivlarini taqqoslaysiz', 'RKE2 klaster o\'rnatasiz'],
+  con: ['segmentatsiya', 'VLAN', '802.1Q', 'trunk/access port', 'VXLAN', 'VTEP', 'VNI', 'RKE2', 'Rancher', 'CNCF sertifikatsiya'],
+  depth: ['Nega segmentatsiya: blast radius, broadcast, muvofiqlik', 'Usullar: fizik ajratish, VLAN, VXLAN, firewall zonalari', 'VLAN: 802.1Q — Ethernet frame ga 4 baytli teg (12 bit VID → 4094 VLAN)', 'Access port va trunk port; native VLAN', 'VLAN lararo marshrutlash (router-on-a-stick, L3 switch)', 'Linux da VLAN interfeys (ip link add link eth0 name eth0.10 type vlan id 10)', 'VXLAN: L2 frame ni UDP (4789) ichiga o\'rash; VNI 24 bit → 16 mln segment', 'VTEP, underlay/overlay, MTU (50 bayt overhead)', 'K8s CNI larda VXLAN (Flannel, Calico, Canal)', 'CNCF sertifikatlangan distributivlar: kubeadm, RKE2, k3s, OpenShift, Talos', 'RKE2: xavfsizlikka yo\'naltirilgan (CIS), server/agent, containerd, o\'rnatilgan etcd, static Pod', 'RKE2 o\'rnatish: config.yaml, token, 9345 porti', 'Rancher nima: ko\'p klasterli boshqaruv'],
+  glo: [['VLAN', 'Virtual LAN — bitta fizik tarmoqni mantiqiy L2 segmentlarga bo\'lish'], ['802.1Q', 'Ethernet frame ga VLAN tegini qo\'shish standarti'], ['trunk', 'Bir necha VLAN ni tegli holda o\'tkazuvchi port'], ['VXLAN', 'L2 frame larni UDP ichida L3 tarmoq orqali uzatish texnologiyasi'], ['VTEP', 'VXLAN Tunnel Endpoint — o\'rash/ochish nuqtasi'], ['VNI', 'VXLAN Network Identifier — 24 bitli segment raqami'], ['RKE2', 'Rancher ning xavfsizlikka yo\'naltirilgan K8s distributivi']],
+  labs: ['Linux da ikki VLAN interfeys yarating va izolyatsiyani tekshiring', 'Ikki xost orasida qo\'lda VXLAN tunnel', 'RKE2 server + agent o\'rnating'],
+  bf: ['VXLAN orqali katta paketlar o\'tmayapti (MTU)', 'RKE2 agent ulanmayapti: 9345 port yopiq'],
+  iv: ['VLAN va VXLAN farqi?', 'Trunk va access port farqi?', 'RKE2 va kubeadm farqi?'],
+  rel: [6, 42, 61, 65], tools: ['osi', 'subnet'] }),
+
+L(61, 12, 'Hub/Switch/Router, L2 vs L3 switch, pfSense noldan', 'Tarmoq qurilmalari qanday ishlaydi.', 75, {
+  v: ['pfSense CE 2.7'],
+  obj: ['Hub, switch va router farqini frame darajasida tushuntirasiz', 'CAM jadvali qanday to\'ldirilishini bilasiz', 'pfSense ni noldan o\'rnatasiz'],
+  con: ['hub', 'switch', 'router', 'CAM jadvali', 'MAC learning', 'collision domain', 'broadcast domain', 'L3 switch', 'pfSense'],
+  depth: ['Hub: L1, hamma portga takrorlaydi — bitta collision domain', 'Switch: L2, MAC learning — manba MAC ni portga bog\'lash', 'CAM jadvali: noma\'lum manzil → flooding; aging', 'Collision domain (har port alohida) va broadcast domain (butun VLAN)', 'Broadcast bo\'roni va STP ga qisqa kirish', 'Router: L3, broadcast domenlarni ajratadi', 'L2 vs L3 switch: SVI, VLAN lararo marshrutlash apparat tezligida', 'pfSense: FreeBSD + pf asosidagi firewall/router', 'O\'rnatish: WAN/LAN interfeyslarini tayinlash, webConfigurator', 'Dastlabki firewall qoidalari: LAN → any, WAN default deny', 'Qoidalar tartibi: birinchi mos kelgan yutadi, interfeysga kiruvchi yo\'nalishda', 'Virtualizatsiyada pfSense: virtual switch va port guruhlar'],
+  glo: [['hub', 'Signalni barcha portlarga takrorlovchi L1 qurilma'], ['switch', 'Frame larni MAC manzil bo\'yicha yo\'naltiruvchi L2 qurilma'], ['CAM jadvali', 'Switch dagi MAC manzil → port jadvali'], ['collision domain', 'Frame lar to\'qnashishi mumkin bo\'lgan segment'], ['broadcast domain', 'Broadcast frame yetib boradigan qurilmalar to\'plami'], ['SVI', 'Switch Virtual Interface — L3 switch dagi VLAN interfeysi']],
+  labs: ['pfSense ni VM ga o\'rnatib, LAN mijozni internetga chiqaring', 'Linux bridge da "bridge fdb show" bilan MAC learning ni kuzating'],
+  bf: ['LAN dan internet yo\'q: WAN gateway yoki NAT qoidasi'],
+  iv: ['Switch va router farqi?', 'Switch noma\'lum MAC li frame ni nima qiladi?', 'Broadcast domain va collision domain farqi?'],
+  rel: [6, 7, 60, 62], tools: ['osi', 'nat'] }),
+
+L(62, 12, 'pfSense: DHCP, Gateway, DNS, NTP. Broadcast domain. Linux bridge', 'Tarmoqning asosiy xizmatlari.', 70, {
+  v: ['pfSense CE 2.7', 'iproute2'],
+  obj: ['DHCP DORA jarayonini paketma-paket tushuntirasiz', 'pfSense da DHCP/DNS/NTP sozlaysiz', 'Linux bridge yaratasiz'],
+  con: ['DHCP', 'DORA', 'lease', 'DHCP relay', 'DNS resolver', 'NTP', 'Linux bridge', 'veth'],
+  depth: ['DHCP DORA: Discover (broadcast) → Offer → Request → Ack; 67/68 UDP portlar', 'Lease vaqti, T1/T2 yangilash', 'DHCP nega broadcast domen bilan cheklangan; relay (giaddr)', 'Statik bog\'lash (MAC → IP), DHCP option lar (3 gateway, 6 DNS, 42 NTP)', 'Rogue DHCP server muammosi', 'pfSense DNS Resolver (Unbound) vs Forwarder; host override', 'NTP nega muhim: sertifikatlar, Kerberos, loglar, etcd', 'Gateway monitoring va multi-WAN', 'Linux bridge: virtual switch; ip link add br0 type bridge', 'veth juftlik va bridge ga ulash; VM/konteyner tarmoqlarida qo\'llanishi', 'bridge va iptables: br_netfilter'],
+  glo: [['DHCP', 'Dynamic Host Configuration Protocol — IP sozlamalarini avtomatik tarqatish'], ['DORA', 'Discover, Offer, Request, Acknowledge — DHCP ning to\'rt qadami'], ['lease', 'IP manzil ijarasi muddati'], ['NTP', 'Network Time Protocol — vaqtni sinxronlash'], ['Linux bridge', 'Yadro ichidagi dasturiy L2 switch'], ['relay', 'DHCP so\'rovlarini boshqa segmentdagi serverga uzatuvchi']],
+  labs: ['tcpdump bilan DORA paketlarini ushlang', 'Linux bridge + ikki network namespace yarating'],
+  bf: ['Mijoz 169.254.x.x manzil oldi', 'Tarmoqda ikkinchi (rogue) DHCP server'],
+  iv: ['DHCP qanday ishlaydi?', 'NTP nega muhim?'],
+  rel: [6, 61, 63], tools: ['osi'] }),
+
+L(63, 12, 'pfSense + OpenNebula tarmoq segmentatsiyasi', 'Fizik va VLAN asosida segmentlash amaliyoti.', 75, {
+  v: ['pfSense CE 2.7', 'OpenNebula 6.8+'],
+  obj: ['Segment rejasini tuzasiz (mgmt, storage, k8s, dmz)', 'pfSense da VLAN interfeyslar va qoidalar yaratasiz', 'OpenNebula virtual tarmoqlarini VLAN ga bog\'laysiz'],
+  con: ['segment rejasi', 'VLAN interfeys', 'inter-VLAN qoidalar', 'OpenNebula virtual network', '802.1Q driver', 'DMZ'],
+  depth: ['Segment rejasi: management, storage, kubernetes, DMZ, foydalanuvchi — har biriga subnet va VLAN ID', 'Fizik segmentatsiya: alohida NIC/switch — qachon o\'zini oqlaydi', 'pfSense: VLAN yaratish (ota interfeys + teg), interfeys tayinlash, har biriga DHCP', 'VLAN lararo firewall qoidalari: default deny, faqat kerakli oqimlar', 'Alias lar bilan qoidalarni boshqarish', 'OpenNebula arxitekturasi: frontend, KVM xostlar, datastore, virtual network', 'Tarmoq drayverlari: bridge, 802.1Q, VXLAN', 'Trunk ni gipervizor xostga yetkazish', 'Sinov: segmentlar orasida ping/nc, qoida loglari'],
+  glo: [['DMZ', 'Demilitarized Zone — tashqi dunyoga ochiq xizmatlar uchun ajratilgan segment'], ['OpenNebula', 'Ochiq kodli virtualizatsiya va xususiy bulut platformasi'], ['alias', 'pfSense da IP/port guruhiga berilgan nom'], ['datastore', 'VM disk tasvirlari saqlanadigan ombor']],
+  labs: ['3 VLAN (mgmt/k8s/dmz) yarating va lararo qoidalarni yozing', 'OpenNebula da VLAN ga bog\'langan virtual tarmoq va VM'],
+  bf: ['VM VLAN da IP olmayapti: trunk da VLAN ruxsat etilmagan'],
+  iv: ['Tarmoqni qanday segmentlarga bo\'lasiz va nega?'],
+  rel: [60, 61, 62, 64], tools: ['subnet', 'nat'] }),
+
+L(64, 12, 'pfSense OpenVPN. Interfeyslarni buzish va tuzatish', 'Masofaviy kirish va nosozliklarni bartaraf etish mashqi.', 70, {
+  v: ['pfSense CE 2.7', 'OpenVPN 2.6'],
+  obj: ['pfSense da OpenVPN server ko\'tarasiz', 'PKI (CA, server, mijoz sertifikatlari) ni boshqarasiz', 'Interfeys nosozliklarini tizimli tuzatasiz'],
+  con: ['OpenVPN', 'TLS PKI', 'tun vs tap', 'split tunnel', 'push route', 'troubleshooting metodikasi', 'konsol orqali tiklash'],
+  depth: ['OpenVPN arxitekturasi: TLS control channel + data channel; UDP 1194', 'PKI: CA, server va mijoz sertifikatlari, CRL bilan bekor qilish', 'tun (L3) va tap (L2)', 'Tunnel tarmog\'i, push "route ...", split vs full tunnel', 'pfSense wizard, mijoz eksporti, firewall qoidalari (WAN va OpenVPN tab)', 'WireGuard bilan taqqoslash', 'Nosozlik metodikasi: pastdan yuqoriga (link → IP → route → firewall → xizmat)', 'Interfeys tayinlanishi buzilganda konsol menyusi (assign interfaces, set IP)', 'Konfiguratsiya tarixi va zaxiradan tiklash (config.xml)', 'Packet capture va firewall loglarini o\'qish', 'O\'zini qulflab qo\'yganda: anti-lockout qoidasi'],
+  glo: [['OpenVPN', 'TLS asosidagi ochiq kodli VPN'], ['CRL', 'Certificate Revocation List — bekor qilingan sertifikatlar ro\'yxati'], ['split tunnel', 'Faqat ma\'lum tarmoqlar VPN orqali yuboriladigan rejim'], ['tun', 'L3 (IP) darajasidagi virtual tunnel interfeysi']],
+  labs: ['OpenVPN server ko\'tarib, mijozdan ichki segmentga ulaning', 'Interfeys tayinlanishini ataylab buzib, konsoldan tiklang'],
+  bf: ['VPN ulanadi, ichki tarmoq ko\'rinmaydi (push route / qoida)', 'WebGUI ga kirib bo\'lmayapti'],
+  iv: ['Tarmoq nosozligini qanday tartibda qidirasiz?', 'Split tunnel va full tunnel farqi?'],
+  rel: [8, 63, 65], tools: ['nat'] }),
+
+L(65, 13, 'Rancher (HA) 3-node RKE2. Downstream cluster provisioning', 'Ko\'p klasterli boshqaruv platformasi.', 80, {
+  v: ['Rancher 2.9+', 'RKE2 1.30+', 'cert-manager 1.15+'],
+  obj: ['HA Rancher ni RKE2 ustiga o\'rnatasiz', 'Management va downstream klaster farqini bilasiz', 'Rancher orqali yangi klaster yaratasiz'],
+  con: ['Rancher HA', 'management cluster', 'downstream cluster', 'cattle-cluster-agent', 'Fleet', 'node driver', 'custom cluster'],
+  depth: ['Rancher arxitekturasi: management (local) klaster ichida ishlaydi', '3 node RKE2: etcd quorum, server node lar orasida LB/VIP', 'Helm bilan o\'rnatish: cert-manager, hostname, TLS manbalari', 'Downstream klaster turlari: provisioned (RKE2/K3s), imported, hosted', 'cattle-cluster-agent: downstream dan Rancher ga tunnel (teskari ulanish)', 'Custom cluster: ro\'yxatdan o\'tish buyrug\'i va rollar (etcd/controlplane/worker)', 'Node driver bilan avtomatik VM yaratish', 'Fleet — o\'rnatilgan GitOps', 'Rancher o\'chsa downstream klasterlar ishlashda davom etadi', 'Zaxira: rancher-backup operator, etcd snapshot'],
+  glo: [['Rancher', 'Ko\'p Kubernetes klasterlarini boshqarish platformasi'], ['downstream cluster', 'Rancher boshqaradigan ish klasteri'], ['management cluster', 'Rancher o\'zi ishlaydigan klaster'], ['Fleet', 'Rancher ning ko\'p klasterli GitOps dvigateli']],
+  labs: ['3 node RKE2 + Rancher HA o\'rnating', 'Rancher orqali custom downstream klaster yarating'],
+  bf: ['Downstream klaster "Unavailable": agent Rancher URL ga yeta olmayapti'],
+  iv: ['Rancher nima beradi?', 'Rancher o\'chsa downstream klasterlarga nima bo\'ladi?'],
+  rel: [44, 60, 66], tools: ['raft', 'k8smap'] }),
+
+L(66, 13, 'Rancher downstream. OAuth/OIDC kirish. Infra cluster', 'Zamonaviy autentifikatsiya asoslari.', 85, {
+  v: ['OAuth 2.0 / 2.1', 'OpenID Connect 1.0', 'Rancher 2.9+'],
+  obj: ['OAuth2 va OIDC farqini aniq aytasiz', 'Grant turlarini vaziyatga qarab tanlaysiz', 'JWT ni dekodlab o\'qiysiz', 'Infra klaster rolini belgilaysiz'],
+  con: ['OAuth2', 'OIDC', 'grant turlari', 'access token', 'ID token', 'refresh token', 'JWT', 'claims', 'infra cluster'],
+  depth: ['Autentifikatsiya (kim?) va avtorizatsiya (nima mumkin?) farqi', 'OAuth2 rollari: resource owner, client, authorization server, resource server', 'OAuth2 — avtorizatsiya delegatsiyasi, autentifikatsiya emas', 'Grant turlari: authorization code (+PKCE), client credentials, device code; implicit va password eskirgan', 'OIDC = OAuth2 + identifikatsiya qatlami: ID token, UserInfo, discovery (.well-known/openid-configuration)', 'JWT tuzilishi: header.payload.signature; base64url; imzo (RS256) va JWKS', 'Standart claim lar: iss, sub, aud, exp, iat; groups', 'Access token vs ID token vs refresh token', 'JWT shifrlanmagan — maxfiy narsa solinmaydi', 'Kubernetes apiserver OIDC bayroqlari', 'Infra klaster: umumiy xizmatlar (Keycloak, Harbor, ArgoCD, monitoring) uchun alohida klaster'],
+  glo: [['OAuth2', 'Avtorizatsiyani delegatsiya qilish freymvorki'], ['OIDC', 'OpenID Connect — OAuth2 ustidagi identifikatsiya qatlami'], ['ID token', 'Foydalanuvchi kimligini tasdiqlovchi JWT'], ['access token', 'Resursga kirish uchun beriladigan token'], ['claim', 'Token ichidagi da\'vo (kalit-qiymat)'], ['IdP', 'Identity Provider — foydalanuvchilarni autentifikatsiya qiluvchi xizmat'], ['JWKS', 'JSON Web Key Set — imzoni tekshirish uchun ochiq kalitlar to\'plami'], ['SSO', 'Single Sign-On — bir marta kirib, ko\'p tizimdan foydalanish']],
+  labs: ['JWT ni qo\'lda dekodlang va imzosini JWKS bilan tekshiring', 'Rancher ga OIDC provayder ulang'],
+  bf: ['"invalid_redirect_uri"', 'Token "aud" mos kelmaydi'],
+  iv: ['OAuth2 va OIDC farqi?', 'JWT nima va u xavfsizmi?', 'Access token va ID token farqi?'],
+  rel: [54, 65, 67, 68], tools: ['oidc'] }),
+
+L(67, 13, 'Keycloak operator bilan K8s da. Virtualizatsiya CPU passthrough', 'O\'z identity provayderingiz.', 75, {
+  v: ['Keycloak 25+/26', 'Keycloak Operator', 'KVM/QEMU'],
+  obj: ['Keycloak ni operator bilan HA rejimda o\'rnatasiz', 'Realm, client, user, group tushunchalarini bilasiz', 'CPU passthrough nega kerakligini tushunasiz'],
+  con: ['Keycloak', 'realm', 'client', 'client scope', 'Keycloak operator', 'Infinispan', 'CPU passthrough', 'x86-64-v2'],
+  depth: ['Keycloak: realm (ijarachi), client (ilova), user, group, role, identity brokering', 'Client turlari: confidential vs public; redirect URI', 'Client scope va mapper lar (groups claim)', 'Operator: Keycloak CR, KeycloakRealmImport; tashqi PostgreSQL', 'HA: Infinispan kesh, Pod lar bir-birini topishi (JGroups/DNS)', 'Ingress ortida: hostname, proxy sarlavhalari (X-Forwarded-*)', 'Admin konsolni himoyalash', 'CPU passthrough: VM ga xost CPU bayroqlarini berish (host-passthrough)', 'Nega kerak: zamonaviy image lar x86-64-v2/v3 talab qiladi ("Illegal instruction", "CPU does not support x86-64-v2")', 'Live migration bilan kelishmovchilik'],
+  glo: [['Keycloak', 'Ochiq kodli identity va access management tizimi'], ['realm', 'Keycloak dagi izolyatsiyalangan foydalanuvchilar va ilovalar maydoni'], ['client', 'Keycloak dan autentifikatsiya so\'raydigan ilova'], ['mapper', 'Tokenga claim qo\'shuvchi qoida'], ['CPU passthrough', 'VM ga xost protsessori imkoniyatlarini to\'liq uzatish']],
+  labs: ['Keycloak operator + PostgreSQL bilan 2 nusxali Keycloak', 'Realm, guruhlar va groups mapper yarating'],
+  bf: ['Pod "Illegal instruction" bilan qulaydi (CPU modeli)', 'Cheksiz redirect: proxy sarlavhalari sozlanmagan'],
+  iv: ['Keycloak realm va client nima?'],
+  rel: [51, 66, 68], tools: ['oidc'] }),
+
+L(68, 13, 'Keycloak ↔ ArgoCD. OIDC workflow to\'liq', 'Authorization code flow ni qadamma-qadam.', 80, {
+  v: ['Keycloak 25+', 'Argo CD 2.12+'],
+  obj: ['Authorization code flow ning har bir so\'rovini tushuntirasiz', 'PKCE qanday hujumdan himoyalashini bilasiz', 'ArgoCD ni Keycloak ga ulaysiz'],
+  con: ['authorization code flow', 'PKCE', 'state', 'nonce', 'scope', 'claims', 'redirect URI', 'argocd-cm oidc.config'],
+  depth: ['Oqim: (1) ilova → /authorize (client_id, redirect_uri, scope, state, code_challenge) (2) login (3) code bilan redirect (4) back-channel: code → /token (5) ID/access token (6) imzo va claim tekshiruvi (7) sessiya', 'Nega code, to\'g\'ridan-to\'g\'ri token emas: front-channel vs back-channel', 'state — CSRF himoyasi; nonce — replay himoyasi', 'PKCE: code_verifier, code_challenge = BASE64URL(SHA256(verifier)); o\'g\'irlangan code befoyda', 'Scope: openid, profile, email, groups', 'Token tekshiruvi: imzo (JWKS), iss, aud, exp', 'Keycloak da ArgoCD client: redirect URI lar, groups mapper', 'argocd-cm: oidc.config (issuer, clientID, clientSecret, requestedScopes)', 'argocd CLI uchun public client + PKCE', 'Logout va token muddati'],
+  glo: [['authorization code', 'Tokenga almashtiriladigan bir martalik qisqa muddatli kod'], ['PKCE', 'Proof Key for Code Exchange — kodni o\'g\'irlashdan himoya mexanizmi'], ['state', 'CSRF dan himoyalovchi tasodifiy qiymat'], ['nonce', 'Tokenni qayta ishlatishdan himoyalovchi bir martalik qiymat'], ['scope', 'So\'ralayotgan ruxsat/ma\'lumot doirasi'], ['back-channel', 'Server-server to\'g\'ridan-to\'g\'ri aloqa kanali']],
+  labs: ['ArgoCD ni Keycloak OIDC ga ulang', 'Brauzer DevTools da flow ning har bir so\'rovini kuzating'],
+  bf: ['"Invalid redirect URI"', 'Login ishlaydi, lekin groups claim yo\'q'],
+  iv: ['Authorization code flow ni qadamma-qadam tushuntiring', 'PKCE nima uchun kerak?', 'state parametri nimadan himoya qiladi?'],
+  rel: [48, 66, 67, 69], tools: ['oidc'] }),
+
+L(69, 13, 'ArgoCD RBAC ↔ Keycloak groups. HAProxy+Keepalived HA. Harbor K8s da', 'Guruhlar asosida ruxsatlar va kirish nuqtasining HA si.', 80, {
+  v: ['Argo CD 2.12+', 'Keycloak 25+', 'Harbor 2.11+ (Helm)', 'HAProxy 2.8+'],
+  obj: ['Keycloak guruhlarini ArgoCD rollariga bog\'laysiz', 'HAProxy+Keepalived juftligini quramiz', 'Harbor ni K8s da OIDC bilan o\'rnatasiz'],
+  con: ['ArgoCD RBAC', 'policy.csv', 'groups claim', 'AppProject', 'HAProxy+Keepalived', 'Harbor helm', 'Harbor OIDC'],
+  depth: ['ArgoCD RBAC: argocd-rbac-cm, policy.csv sintaksisi (p, role, resource, action, object, effect; g, group, role)', 'policy.default va scopes: \'[groups]\'', 'AppProject bilan chegaralash: repo, destination, resurs turlari', 'Keycloak guruhlari → token groups claim → ArgoCD roli', 'HAProxy + Keepalived: ikki node, VIP, track_script; ingress node larga TCP passthrough', 'PROXY protokol va manba IP', 'Harbor ni Helm bilan: expose turi, externalURL, persistence, tashqi DB/Redis', 'Harbor OIDC: auth_mode, endpoint, group claim, admin group; CLI secret', 'OIDC foydalanuvchi docker login qanday qiladi', 'Robot account lar CI uchun'],
+  glo: [['AppProject', 'ArgoCD da ilovalar guruhi va ularning chegaralari'], ['policy.csv', 'ArgoCD RBAC qoidalari fayli'], ['PROXY protokol', 'Proksi ortida asl mijoz manzilini uzatish protokoli'], ['robot account', 'Avtomatlashtirish uchun inson bo\'lmagan hisob']],
+  labs: ['devs guruhi faqat o\'z loyihasini sync qila oladigan RBAC yozing', 'HAProxy+Keepalived VIP ni ingress oldiga qo\'ying', 'Harbor ni Helm + Keycloak OIDC bilan o\'rnating'],
+  bf: ['Foydalanuvchi kirdi, lekin hech narsa ko\'rmayapti (scopes/groups)', 'docker login OIDC foydalanuvchi paroli bilan ishlamaydi'],
+  iv: ['ArgoCD da ruxsatlarni qanday boshqarasiz?', 'Keepalived qanday ishlaydi?'],
+  rel: [45, 54, 68, 70], tools: ['oidc'] }),
+
+L(70, 13, 'Harbor: proxy cache, robot account, Trivy. MinIO S3, RAID', 'Registry imkoniyatlari va obyektli saqlash asoslari.', 90, {
+  v: ['Harbor 2.11+', 'Trivy 0.5x', 'MinIO (2024+ relizlar)'],
+  obj: ['Proxy cache va replikatsiya sozlaysiz', 'Trivy bilan zaifliklarni skanerlaysiz', 'RAID darajalarini va paritetni hisoblaysiz', 'MinIO erasure coding ni tushuntirasiz'],
+  con: ['proxy cache', 'robot account', 'Trivy', 'CVE', 'MinIO', 'S3 API', 'erasure coding', 'RAID 0/1/5/6/10', 'paritet'],
+  depth: ['Proxy cache project: Docker Hub limitlari va air-gap uchun', 'Replikatsiya qoidalari (push/pull)', 'Robot account: muddat, minimal huquq', 'Trivy: image qatlamlaridagi paketlarni CVE bazasi bilan solishtirish; severity; push da skan va zaif image ni bloklash', 'Tag immutability va retention', 'Image imzolash (cosign) haqida', 'Obyektli saqlash vs blok vs fayl', 'S3 API: bucket, object, key, presigned URL, versioning', 'RAID 0 (stripe), RAID 1 (mirror), RAID 5 (1 paritet), RAID 6 (2 paritet), RAID 10', 'Paritet hisobi: XOR — misol bilan yo\'qolgan blokni tiklash', 'Foydali hajm formulalari; rebuild xavfi (URE)', 'MinIO erasure coding: Reed-Solomon, data + parity shard lar (masalan EC:4 — 16 diskda 12+4)', 'Erasure set, yozish/o\'qish quorum, bitrot himoyasi', 'MinIO topologiyalari: SNSD, SNMD, MNMD; K8s da operator/tenant', 'MinIO va RAID ni birga ishlatmaslik (JBOD)'],
+  glo: [['proxy cache', 'Tashqi registry dan olingan image larni mahalliy keshlab beruvchi rejim'], ['CVE', 'Common Vulnerabilities and Exposures — ma\'lum zaifliklar identifikatori'], ['Trivy', 'Image va konfiguratsiyalar uchun zaiflik skaneri'], ['RAID', 'Disklarni tezlik/ishonchlilik uchun massivga birlashtirish'], ['paritet', 'Yo\'qolgan ma\'lumotni tiklash imkonini beruvchi nazorat ma\'lumoti'], ['erasure coding', 'Ma\'lumotni data va parity bo\'laklarga ajratib, yo\'qotishga chidamli saqlash'], ['bucket', 'S3 da obyektlar konteyneri'], ['bitrot', 'Diskdagi ma\'lumotning vaqt o\'tishi bilan sezdirmay buzilishi']],
+  labs: ['Docker Hub uchun proxy cache project yarating', 'Push da Trivy skan va CRITICAL ni bloklash', 'MinIO 4 diskli tenant: bitta diskni o\'chirib, ma\'lumot butunligini tekshiring'],
+  bf: ['Pull bloklandi: image da CRITICAL zaiflik', 'MinIO "Write quorum not met"'],
+  iv: ['RAID 5 va RAID 6 farqi?', 'Erasure coding RAID dan nimasi bilan farq qiladi?', 'Proxy cache nima uchun kerak?'],
+  rel: [30, 59, 69, 71], tools: [] }),
+
+L(71, 13, 'Keycloak OIDC → MinIO, Rancher. Harbor storage → MinIO. Sonatype Nexus', 'Barcha xizmatlarni yagona SSO va yagona omborga ulash; Nexus ni o\'rnatish.', 85, {
+  v: ['MinIO', 'Rancher 2.9+', 'Harbor 2.11+', 'Sonatype Nexus Repository 3.7x (CE)'],
+  note: 'Asl videodars shu joyda uzilgan. Nexus o\'rnatish yo\'riqnomasi bu darsda to\'liq, mustaqil ravishda berilgan (AI generatsiyasi ham buni to\'liq yozishga yo\'naltirilgan).',
+  obj: ['MinIO va Rancher ni Keycloak OIDC ga ulaysiz', 'Harbor saqlash joyini MinIO S3 ga ko\'chirasiz', 'Nexus ni noldan o\'rnatib, repozitoriy turlarini bilasiz'],
+  con: ['MinIO OIDC', 'policy claim', 'Rancher Keycloak OIDC', 'Harbor S3 storage', 'Nexus', 'hosted/proxy/group repo', 'blob store'],
+  depth: ['MinIO OIDC: config_url, client_id, claim_name=policy; Keycloak da policy atributi va mapper', 'MinIO policy lar (JSON, S3 uslubida)', 'Rancher Keycloak OIDC: auth provider, guruhlarni global/klaster rollariga bog\'lash', 'Harbor registry storage → S3 (MinIO): regionendpoint, bucket, secure, redirect disable', 'Mavjud image larni ko\'chirish', 'Nexus nima: universal artefakt ombori (Maven, npm, PyPI, Docker, apt, raw)', 'Nexus o\'rnatish TO\'LIQ: tizim talablari (4+ CPU, 8+ GB RAM), Docker/Helm bilan, /nexus-data hajmi, birinchi admin paroli (admin.password), ulimit', 'Nexus ma\'lumotlar bazasi: H2 (o\'rnatilgan) va PostgreSQL; OrientDB dan migratsiya haqida', 'Repozitoriy turlari: hosted, proxy, group — misollar bilan', 'Blob store: file va S3', 'Ingress ortida Nexus va Docker repo uchun alohida port/subdomen', 'Nexus vs Harbor: qachon qaysi biri'],
+  glo: [['Nexus', 'Sonatype ning universal artefakt repozitoriy menejeri'], ['hosted repo', 'O\'z artefaktlaringiz saqlanadigan repozitoriy'], ['proxy repo', 'Tashqi repozitoriyni keshlab beruvchi repozitoriy'], ['group repo', 'Bir necha repozitoriyni bitta URL ostida birlashtiruvchi'], ['blob store', 'Artefakt fayllari jismonan saqlanadigan joy']],
+  labs: ['MinIO konsoliga Keycloak orqali kiring (policy claim bilan)', 'Harbor storage ni MinIO ga o\'tkazing', 'Nexus ni o\'rnating, admin parolini almashtiring, anonim kirishni o\'chiring'],
+  bf: ['MinIO: login bo\'ladi, lekin bucket lar ko\'rinmaydi (policy claim yo\'q)', 'Harbor pull da MinIO ichki manziliga redirect qilmoqda', 'Nexus ishga tushmayapti: xotira/ulimit yetarli emas'],
+  iv: ['Hosted, proxy va group repozitoriy farqi?', 'Nexus va Harbor ni qanday ajratib ishlatasiz?'],
+  rel: [68, 69, 70, 72], tools: ['oidc'] }),
+
+L(72, 13, 'Nexus sozlash. Etcd backup → MinIO. Patroni klaster nazariyasi (1-qism)', 'Artefakt ombori, klaster zaxirasi va HA Postgres nazariyasi.', 90, {
+  v: ['Nexus Repository 3.7x', 'etcd 3.5', 'RKE2 1.30+', 'Patroni 3.x/4.x', 'PostgreSQL 16'],
+  obj: ['Nexus da npm/PyPI/Docker proxy va hosted repolarni sozlaysiz', 'etcd snapshot larini MinIO ga avtomatik yuborasiz', 'Patroni+etcd+HAProxy+keepalived arxitekturasini chizasiz'],
+  con: ['Nexus repolari', 'cleanup policy', 'etcd snapshot', 'RKE2 etcd-s3', 'restore', 'Patroni arxitekturasi', 'keepalived VIP'],
+  depth: ['Nexus: npm-proxy + npm-hosted + npm-group; PyPI; Docker (connector port); apt', 'Mijozlarni sozlash: .npmrc, pip.conf, containerd mirror', 'Rollar, foydalanuvchilar, CI uchun token', 'Cleanup policy va compact blob store vazifasi', 'etcd zaxira nega hayotiy: klaster holatining yagona manbai', 'etcdctl snapshot save; RKE2: etcd-snapshot-schedule-cron, retention, etcd-s3-* parametrlari', 'Tiklash: rke2 server --cluster-reset --cluster-reset-restore-path; boshqa server node larni qayta qo\'shish', 'Zaxirani sinash — tiklab ko\'rilmagan zaxira zaxira emas', 'Patroni to\'liq arxitekturasi: 3 PG+Patroni, 3 etcd, 2 HAProxy + keepalived VIP', 'Har bir komponent nima uchun; portlar (5432, 8008, 2379/2380, 5000/5001)', 'patroni.yml bo\'limlari: scope, restapi, etcd3, bootstrap.dcs, postgresql, tags', 'Bootstrap jarayoni: birinchi node initdb, qolganlari pg_basebackup', 'Setup 1-qism: etcd klaster va Patroni node lar'],
+  glo: [['snapshot', 'Ma\'lumotlar bazasining bir lahzadagi to\'liq nusxasi'], ['cleanup policy', 'Eski artefaktlarni avtomatik o\'chirish qoidasi'], ['cluster-reset', 'RKE2 da etcd ni bitta a\'zoli klasterga qaytarish amali'], ['pg_basebackup', 'Ishlab turgan PostgreSQL dan to\'liq fizik nusxa oluvchi vosita']],
+  labs: ['Nexus da npm va Docker proxy repo sozlang va mijozdan sinang', 'RKE2 etcd snapshot → MinIO; klasterni snapshotdan tiklang', '3 node etcd + Patroni klaster ko\'taring'],
+  bf: ['etcd tiklangach boshqa server node lar qo\'shila olmayapti', 'Patroni "waiting for leader to bootstrap"'],
+  iv: ['etcd ni qanday zaxiralaysiz va tiklaysiz?', 'Patroni klasterida har bir komponent vazifasi?'],
+  rel: [19, 44, 71, 73], tools: ['patroni', 'raft'] }),
+
+L(73, 13, 'Postgres HA: HAProxy, switchover. Replikatsiya rejimlari. Barman, pgBackRest. Yakun', 'Ma\'lumotni yo\'qotmaslik san\'ati va kurs xulosasi.', 100, {
+  v: ['PostgreSQL 16/17', 'Patroni 3.x/4.x', 'pgBackRest 2.5x', 'Barman 3.x'],
+  obj: ['HAProxy orqali RW/RO yo\'naltirishni sozlaysiz va switchover sinaysiz', 'Async, sync va quorum replikatsiya kompromisslarini tushuntirasiz', 'WAL arxivlash va PITR ni amalga oshirasiz', 'RPO/RTO ni hisoblaysiz', 'Final loyihaga tayyorsiz'],
+  con: ['HAProxy httpchk', 'switchover', 'async replikatsiya', 'sync replikatsiya', 'synchronous_commit', 'WAL', 'PITR', 'RPO/RTO', 'Barman', 'pgBackRest'],
+  depth: ['HAProxy: option httpchk GET /primary (5000) va /replica (5001); on-marked-down shutdown-sessions', 'Switchover testi: patronictl switchover; ulanishlar uzilishi va ilova retry si', 'WAL ichki: har o\'zgarish avval WAL ga; LSN; checkpoint; crash recovery', 'Async replikatsiya: commit kutmaydi — failover da oxirgi tranzaksiyalar yo\'qolishi mumkin (RPO > 0)', 'Sync replikatsiya: synchronous_standby_names, synchronous_commit darajalari (off, local, remote_write, on, remote_apply)', 'Sync kompromissi: kechikish oshadi; standby o\'chsa yozuv to\'xtaydi', 'Quorum sync: ANY 1 (s1, s2); Patroni synchronous_mode va synchronous_mode_strict', 'Standby sync holatlari: pg_stat_replication (sync_state, lag)', 'Zaxira turlari: mantiqiy (pg_dump) vs fizik (base backup + WAL)', 'PITR: base backup + WAL arxiv → recovery_target_time', 'pgBackRest: stanza, full/diff/incr, parallel, S3 (MinIO) repo, tekshirish', 'Barman: streaming arxiv, barman-cloud', 'RPO (qancha ma\'lumot yo\'qotish mumkin) va RTO (qancha vaqtda tiklanish)', 'Replika ≠ zaxira (DROP TABLE ham replikatsiya bo\'ladi)', 'Kurs yakuni: bilimlar xaritasi va keyingi qadamlar'],
+  glo: [['WAL', 'Write-Ahead Log — o\'zgarishlar avval yoziladigan jurnal'], ['LSN', 'Log Sequence Number — WAL dagi pozitsiya'], ['PITR', 'Point-In-Time Recovery — istalgan vaqt nuqtasiga tiklash'], ['RPO', 'Recovery Point Objective — yo\'qotilishi mumkin bo\'lgan ma\'lumotning eng ko\'p hajmi (vaqtda)'], ['RTO', 'Recovery Time Objective — tiklanish uchun ruxsat etilgan eng ko\'p vaqt'], ['sinxron replikatsiya', 'Commit replika tasdig\'ini kutadigan rejim'], ['pgBackRest', 'PostgreSQL uchun zaxira va tiklash vositasi'], ['checkpoint', 'Xotiradagi o\'zgargan sahifalarni diskka yozish nuqtasi']],
+  labs: ['HAProxy orqali yuk ostida switchover qiling va xatolar sonini o\'lchang', 'Sync replikatsiyani yoqib, replika o\'chganda nima bo\'lishini kuzating', 'pgBackRest → MinIO: to\'liq zaxira, jadvalni o\'chiring, PITR bilan tiklang'],
+  bf: ['Sync rejimda yagona standby o\'chdi — barcha yozuvlar osilib qoldi', 'PITR ishlamaydi: WAL arxivda bo\'shliq bor'],
+  iv: ['Sinxron va asinxron replikatsiya farqi va kompromisslari?', 'PITR qanday ishlaydi?', 'RPO va RTO nima?', 'Replika nega zaxira o\'rnini bosmaydi?'],
+  rel: [19, 51, 72, 18], tools: ['patroni'] })
+]
