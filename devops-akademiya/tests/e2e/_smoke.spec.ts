@@ -1,6 +1,6 @@
 import { test } from '@playwright/test'
 import { launch, skipOnboarding } from './helpers'
-const S = '/tmp/claude-0/-home-user/5aed6ae9-5a2d-5067-97a1-6a26dde840eb/scratchpad/'
+const S = 'test-results/'
 const L = Number(process.env.L || 2)
 test('lesson', async () => {
   test.setTimeout(240000)

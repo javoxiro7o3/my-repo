@@ -4,3 +4,4 @@ dist
 native
 test-results
 *.log
+dist-linux

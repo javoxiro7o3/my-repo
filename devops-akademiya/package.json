@@ -16,12 +16,18 @@
     "e2e": "playwright test --trace off",
     "native": "node scripts/fetch-native.mjs",
     "icon": "node scripts/make-icon.mjs",
-    "dist:win": "npm run build && node scripts/fetch-native.mjs win32 && electron-builder --win --x64"
+    "dist:win": "npm run build && node scripts/fetch-native.mjs win32 x64 && electron-builder --win --x64 --publish never",
+    "dist:portable": "npm run build && node scripts/fetch-native.mjs win32 x64 && electron-builder --win portable --x64 --publish never",
+    "dist:dir": "npm run build && node scripts/fetch-native.mjs win32 x64 && electron-builder --win dir --x64 --publish never"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3"
+  },
+  "devDependencies": {
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@monaco-editor/react": "^4.7.0",
+    "@playwright/test": "^1.65.0",
     "@radix-ui/react-dialog": "^1.3.1",
     "@radix-ui/react-dropdown-menu": "^2.2.1",
     "@radix-ui/react-popover": "^1.3.1",
@@ -30,17 +36,27 @@
     "@radix-ui/react-switch": "^1.4.1",
     "@radix-ui/react-tabs": "^1.2.1",
     "@radix-ui/react-tooltip": "^1.4.1",
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^6.3.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "better-sqlite3": "^13.0.3",
+    "autoprefixer": "^10.6.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
     "framer-motion": "^14.12.0",
     "highlight.js": "^11.12.0",
     "lucide-react": "^1.71.0",
     "mermaid": "^12.3.0",
     "monaco-editor": "^0.57.0",
+    "postcss": "^8.5.32",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
@@ -50,26 +66,74 @@
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.7.0",
-    "yaml": "^2.9.1",
-    "zustand": "^5.1.0"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.65.0",
-    "@tailwindcss/container-queries": "^0.1.1",
-    "@types/better-sqlite3": "^9.6.0",
-    "@types/node": "^26.6.6",
-    "@types/react": "^18.3.31",
-    "@types/react-dom": "^18.3.7",
-    "@vitejs/plugin-react": "^6.3.0",
-    "autoprefixer": "^10.6.2",
-    "electron": "^45.2.3",
-    "electron-builder": "^26.18.0",
-    "electron-vite": "^6.0.0",
-    "postcss": "^8.5.32",
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^7.0.2",
     "vite": "^8.3.7",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "yaml": "^2.9.1",
+    "zustand": "^5.1.0"
+  },
+  "build": {
+    "appId": "uz.devops.akademiya",
+    "productName": "DevOps Akademiya",
+    "copyright": "© 2026 DevOps Akademiya",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "!**/*.map",
+      "!node_modules/better-sqlite3/{deps,src,prebuilds,build,binding.gyp}{,/**/*}"
+    ],
+    "extraResources": [
+      {
+        "from": "native",
+        "to": "native",
+        "filter": [
+          "*.node"
+        ]
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [],
+    "npmRebuild": false,
+    "nodeGypRebuild": false,
+    "compression": "normal",
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DevOps Akademiya",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "language": "1091"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
+    }
   }
 }
