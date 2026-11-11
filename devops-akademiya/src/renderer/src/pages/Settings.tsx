@@ -20,6 +20,8 @@ export default function Settings() {
   const [confirm, setConfirm] = useState<'reset' | 'cache' | 'key' | null>(null)
   const [model, setModel] = useState(settings?.model ?? '')
   const [pro, setPro] = useState(settings?.proModel ?? '')
+  // Kalit tekshirilganda model avtomatik almashtirilishi mumkin — maydonlarni sinxronlaymiz
+  useEffect(() => { setModel(settings?.model ?? ''); setPro(settings?.proModel ?? '') }, [settings?.model, settings?.proModel])
   const refresh = () => invoke<Usage>('usage:get').then(setUsage)
   useEffect(() => { void refresh() }, [])
   if (!settings) return null
@@ -38,8 +40,8 @@ export default function Settings() {
       <Card icon={<Cpu size={17} />} title="Model">
         <Row title="Asosiy model" desc="Darslar, chat va tushuntirishlar uchun. Tez va arzon model tavsiya etiladi."><input value={model} onChange={(e) => setModel(e.target.value)} onBlur={() => model.trim() && setSettings({ model: model.trim() })} className="input w-56 font-mono text-[13px]" aria-label="Asosiy model nomi" list="models" /></Row>
         <Row title="Murakkab mavzular uchun model" desc="Loyiha baholash kabi chuqur tahlil talab qiladigan vazifalar uchun."><input value={pro} onChange={(e) => setPro(e.target.value)} onBlur={() => pro.trim() && setSettings({ proModel: pro.trim() })} className="input w-56 font-mono text-[13px]" aria-label="Murakkab model nomi" list="models" /></Row>
-        <datalist id="models">{['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-pro-latest'].map((m) => <option key={m} value={m} />)}</datalist>
-        <p className="py-3 text-[12.5px] leading-relaxed text-muted">Model nomlari vaqt o'tishi bilan o'zgaradi — shuning uchun maydon erkin tahrirlanadi. Model almashtirilsa, kesh kaliti ham o'zgaradi (eski javoblar saqlanib qoladi).</p>
+        <datalist id="models">{['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-pro-latest'].map((m) => <option key={m} value={m} />)}</datalist>
+        <p className="py-3 text-[12.5px] leading-relaxed text-muted">Model nomlari vaqt o'tishi bilan o'zgaradi — shuning uchun maydon erkin tahrirlanadi. Tanlangan model ishlamasa (Google yopgan, limit 0 yoki band), ilova avtomatik ravishda ishlaydigan modelga o'tadi. Model almashtirilsa, kesh kaliti ham o'zgaradi (eski javoblar saqlanib qoladi).</p>
       </Card>
       <Card icon={<Palette size={17} />} title="Ko'rinish">
         <Row title="Mavzu"><Segmented label="Mavzu" value={settings.theme} onChange={(theme) => setSettings({ theme })} options={[{ value: 'dark', label: 'Tungi' }, { value: 'light', label: 'Kunduzgi' }, { value: 'terminal', label: 'Terminal' }, { value: 'system', label: 'Tizim' }]} /></Row>

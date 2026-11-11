@@ -5,3 +5,4 @@ native
 test-results
 *.log
 dist-linux
+tests/e2e/.local

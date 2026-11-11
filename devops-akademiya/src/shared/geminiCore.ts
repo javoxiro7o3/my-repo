@@ -26,6 +26,17 @@ export interface StreamOpts {
 export interface StreamResult { text: string; inTokens: number; outTokens: number }
 
 export const DEFAULT_BASE = 'https://generativelanguage.googleapis.com/v1beta'
+
+/** Standart model (2026-11 holatiga: barcha yangi kalitlarda ishlaydi, 3–5 s) */
+export const DEFAULT_MODEL = 'gemini-3.5-flash'
+export const DEFAULT_PRO_MODEL = 'gemini-pro-latest'
+/** Asosiy model ishlamasa (yopilgan / limit 0 / band) navbat bilan sinaladigan modellar */
+export const FALLBACK_MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.8-flash', 'gemini-flash-latest'] as const
+/** Google yangi foydalanuvchilar uchun yopgan modellar — saqlangan sozlamalarda avtomatik almashtiriladi */
+export const isRetiredModel = (m: string) => /^gemini-(1\.|2\.0|2\.5)/.test(m)
+export const modelChain = (primary: string): string[] => [...new Set([primary, ...FALLBACK_MODELS])]
+/** Shu xatolarda keyingi modelga o'tish mantiqli: model yo'q, limit 0, haddan tashqari band */
+export const isFallbackError = (e: unknown) => e instanceof GeminiError && (e.code === 'model' || e.code === 'quota' || e.code === 'rate')
 export const backoffMs = (attempt: number, retryAfter?: number) =>
   retryAfter && retryAfter > 0 ? Math.min(retryAfter * 1000, 60_000) : Math.min(2000 * 2 ** attempt, 32_000)
 
@@ -33,10 +44,10 @@ export const ERR_TEXT: Record<ErrCode | 'nokey', string> = {
   key: 'API kalit noto\'g\'ri yoki bekor qilingan. Sozlamalarda kalitni tekshiring.',
   rate: 'So\'rovlar limiti tugadi (429). Birozdan keyin qayta urinib ko\'ring yoki boshqa model tanlang.',
   offline: 'Internet aloqasi yo\'q — oflayn rejim. Tayyor darslar va keshlangan javoblar ishlayveradi.',
-  model: 'Model topilmadi. Sozlamalarda model nomini tekshiring (masalan: gemini-2.5-flash).',
+  model: 'Model topilmadi yoki Google uni yopgan. Sozlamalarda model nomini tekshiring (masalan: gemini-3.5-flash).',
   blocked: 'Javob xavfsizlik filtri tomonidan to\'xtatildi. Savolni boshqacha ifodalab ko\'ring.',
   region: 'Gemini API sizning hududingizda (yoki tarmog\'ingiz IP manzilida) ishlamaydi. Boshqa tarmoqdan urinib ko\'ring.',
-  quota: 'Bu kalit uchun tanlangan modelda bepul limit yo\'q (limit: 0). Sozlamalarda gemini-2.5-flash yoki gemini-2.5-flash-lite ni tanlang yoki Google AI Studio\'da billing yoqing.',
+  quota: 'Bu kalit uchun tanlangan modelda bepul limit yo\'q (limit: 0). Sozlamalarda gemini-3.5-flash yoki gemini-3.5-flash-lite ni tanlang yoki Google AI Studio\'da billing yoqing.',
   disabled: 'Kalit tegishli Google Cloud loyihasida "Generative Language API" yoqilmagan. Kalitni aistudio.google.com da qayta yarating.',
   unknown: 'Kutilmagan xato yuz berdi. Qayta urinib ko\'ring.',
   nokey: 'Gemini API kaliti kiritilmagan. Sozlamalar → API kalit bo\'limida kiriting.'
@@ -140,7 +151,7 @@ export function cacheKeyParts(p: { lessonId?: number; section?: string; model: s
 }
 
 /** Matndan maxfiy kalitga o'xshash bo'laklarni olib tashlaydi (loglar va eksport uchun) */
-export const redact = (s: string) => s.replace(/AIza[0-9A-Za-z_\-]{20,}/g, '[KALIT YASHIRILDI]').replace(/(key=)[^&\s"']+/gi, '$1[YASHIRILDI]')
+export const redact = (s: string) => s.replace(/AIza[0-9A-Za-z_\-]{20,}/g, '[KALIT YASHIRILDI]').replace(/\bAQ\.[0-9A-Za-z_\-]{20,}/g, '[KALIT YASHIRILDI]').replace(/(key=)[^&\s"']+/gi, '$1[YASHIRILDI]')
 
 /** Model ```json ... ``` bilan o'rab yuborsa ham JSON ni ajratib oladi */
 export function extractJson<T = unknown>(s: string): T {
@@ -149,4 +160,27 @@ export function extractJson<T = unknown>(s: string): T {
   const c = t.indexOf('{'), d = t.lastIndexOf('}')
   const useArr = a >= 0 && (c < 0 || a < c)
   return JSON.parse(useArr ? t.slice(a, b + 1) : t.slice(c, d + 1))
+}
+
+/**
+ * Model zanjiri bilan so'rov: birinchisi ishlamasa (404 / limit 0 / 429-503) keyingisiga o'tadi.
+ * Matn oqimi boshlanib bo'lgach o'tilmaydi (yarim javob aralashmasligi uchun).
+ * Oxirgi modeldan boshqalarida 503/429 uchun uzoq kutilmaydi — darhol keyingi model sinaladi.
+ */
+export async function streamWithFallback(o: Omit<StreamOpts, 'model'> & { models: string[]; onModelFail?: (model: string, e: GeminiError) => void }): Promise<StreamResult & { model: string }> {
+  let last: unknown
+  for (let i = 0; i < o.models.length; i++) {
+    const model = o.models[i]
+    const isLast = i === o.models.length - 1
+    let started = false
+    try {
+      const r = await streamGemini({ ...o, model, maxRetries: isLast ? o.maxRetries : Math.min(o.maxRetries ?? 5, 1), onChunk: (t) => { started = true; o.onChunk(t) } })
+      return { ...r, model }
+    } catch (e) {
+      if (started || !isFallbackError(e)) throw e
+      o.onModelFail?.(model, e as GeminiError)
+      last = e
+    }
+  }
+  throw last
 }

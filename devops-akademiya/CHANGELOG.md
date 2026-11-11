@@ -2,6 +2,15 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/) · Versiyalash: [SemVer](https://semver.org/)
 
+## [1.0.2] — 2026-11-11
+
+### Tuzatildi
+- **AI umuman ishlamas edi (yangi kalitlarda).** Google `gemini-2.5-flash` va `gemini-2.5-pro` modellarini yangi foydalanuvchilar uchun yopgan (404 "no longer available to new users"). Standart model endi `gemini-3.5-flash`. Murakkab vazifalar uchun `gemini-pro-latest`, u billing talab qiladi; bo'lmasa avtomatik flash modelga o'tiladi.
+- **Avtomatik zaxira modellar.** Model yopilgan (404), bepul limiti 0 yoki band (429/503) bo'lsa, navbatdagi model sinaladi: `gemini-3.5-flash → gemini-3.5-flash-lite → gemini-flash-lite-latest → gemini-3.8-flash → gemini-flash-latest`. Doimiy muammoda ishlagan model sozlamalarga yoziladi.
+- Saqlangan eski model nomlari (`gemini-2.5-*`, `1.x`, `2.0`) avtomatik yangisiga almashtiriladi.
+- "Tekshirish" qaysi model ishlaganini ko'rsatadi. Fikrlovchi modellar uchun test limiti 16 → 512 token.
+- **Xavfsizlik:** yangi formatdagi `AQ.…` kalitlar ham loglar va xato matnlaridan yashiriladi (avval faqat `AIza…` yashirilardi).
+
 ## [1.0.1] — 2026-11-11
 
 ### Tuzatildi

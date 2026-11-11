@@ -14,7 +14,7 @@ const finishLesson = (id: number) => SECTION_IDS.forEach((sec) => s.markSection(
 
 describe('sozlamalar', () => {
   it('standart qiymatlar va saqlash', () => {
-    expect(s.getSettings().model).toBe('gemini-2.5-flash')
+    expect(s.getSettings().model).toBe('gemini-3.5-flash')
     s.setSettings({ theme: 'terminal', fontSize: 19 })
     expect(s.getSettings()).toMatchObject({ theme: 'terminal', fontSize: 19 })
   })
@@ -219,5 +219,16 @@ describe('loyiha vazifalari', () => {
     expect(xp).toBe(200)
     expect(s.toggleTask(m.id, 0, true).xp).toBe(0)
     expect(s.stats().projects[`${m.id}:0`]).toBe(true)
+  })
+})
+
+describe('Model sozlamalari migratsiyasi', () => {
+  it('saqlangan gemini-2.5-* modellar yangisiga almashtiriladi, boshqalari saqlanadi', () => {
+    const s = mk()
+    s.setSettings({ model: 'gemini-2.5-flash', proModel: 'gemini-2.5-pro' })
+    expect(s.getSettings().model).toBe('gemini-3.5-flash')
+    expect(s.getSettings().proModel).toBe('gemini-pro-latest')
+    s.setSettings({ model: 'gemini-3.5-flash-lite' })
+    expect(s.getSettings().model).toBe('gemini-3.5-flash-lite')
   })
 })

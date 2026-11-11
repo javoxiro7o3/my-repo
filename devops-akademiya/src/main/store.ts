@@ -1,4 +1,5 @@
 import type BetterSqlite3 from 'better-sqlite3'
+import { DEFAULT_MODEL, DEFAULT_PRO_MODEL, isRetiredModel } from '@shared/geminiCore'
 import type { ChatMsg, Curriculum, Note, SearchHit, Settings, SrsCard, Stats, Usage } from '@shared/types'
 import { SECTION_IDS } from '@shared/sections'
 import { XP, MODULE_BADGES, calcStreak, dayKey } from '@shared/gamify'
@@ -27,7 +28,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS search USING fts5(lesson_id UNINDEXED, sectio
 `
 
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'dark', fontSize: 16, model: 'gemini-2.5-flash', proModel: 'gemini-2.5-pro', hasKey: false,
+  theme: 'dark', fontSize: 16, model: DEFAULT_MODEL, proModel: DEFAULT_PRO_MODEL, hasKey: false,
   onboarded: false, reducedMotion: false, aiPanel: true, name: ''
 }
 const USER_TABLES = ['settings', 'progress', 'lesson_done', 'chat_messages', 'notes', 'bookmarks', 'quiz_attempts', 'srs_cards', 'xp_events', 'activity', 'badges', 'project_tasks', 'counters'] as const
@@ -45,6 +46,9 @@ export class Store {
     const rows = this.db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[]
     const s: any = { ...DEFAULT_SETTINGS }
     for (const r of rows) if (r.key in s) { try { s[r.key] = JSON.parse(r.value) } catch { /* buzilgan qiymat */ } }
+    // Google yopgan modellar (gemini-2.5-* va eskilari) — avtomatik yangisiga
+    if (typeof s.model !== 'string' || isRetiredModel(s.model)) s.model = DEFAULT_MODEL
+    if (typeof s.proModel !== 'string' || isRetiredModel(s.proModel)) s.proModel = DEFAULT_PRO_MODEL
     return s
   }
   setSettings(patch: Partial<Settings>): Settings {

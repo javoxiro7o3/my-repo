@@ -106,7 +106,7 @@ export function KeyForm({ onSaved, compact }: { onSaved?: () => void; compact?: 
   const [msg, setMsg] = useState('')
   const test = async () => {
     setState('busy'); setMsg('')
-    try { const r = await invoke<{ ok: boolean; message: string }>('key:test', { key, model: settings?.model }); setState(r.ok ? 'ok' : 'bad'); setMsg(r.message); return r.ok }
+    try { const r = await invoke<{ ok: boolean; message: string; settings?: any }>('key:test', { key, model: settings?.model }); if (r.settings) set({ settings: r.settings }); setState(r.ok ? 'ok' : 'bad'); setMsg(r.message); return r.ok }
     catch (e: any) { setState('bad'); setMsg(e.message); return false }
   }
   const save = async () => {

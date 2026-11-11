@@ -34,7 +34,12 @@ export function registerIpc(store: Store, getWin: () => BrowserWindow | null) {
 
   h('settings:get', () => settings())
   h('settings:set', (p) => { store.setSettings(p ?? {}); return settings() })
-  h('key:test', (p) => testKey(str(p?.key, 200).trim(), str(p?.model ?? store.getSettings().model, 80)))
+  h('key:test', async (p) => {
+    const r = await testKey(str(p?.key, 200).trim(), str(p?.model ?? store.getSettings().model, 80))
+    // Tanlangan model ishlamay, boshqasi ishlagan bo'lsa — o'shani saqlaymiz
+    if (r.ok && r.model && r.model !== store.getSettings().model) store.setSettings({ model: r.model })
+    return { ...r, settings: settings() }
+  })
   h('key:set', (p) => { const k = str(p?.key, 200).trim(); if (k.length < 20) throw new Error('Kalit juda qisqa'); const r = saveKey(k); return { ...r, settings: settings() } })
   h('key:clear', () => { clearKey(); return settings() })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { backoffMs, cacheKeyParts, extractJson, GeminiError, parseSse, redact, streamGemini } from '@shared/geminiCore'
+import { backoffMs, cacheKeyParts, extractJson, GeminiError, parseSse, redact, streamGemini, streamWithFallback, modelChain, isRetiredModel, DEFAULT_MODEL } from '@shared/geminiCore'
 import { PROMPT_VERSION, SYSTEM_PROMPT, buildRequest, sectionPrompt } from '@shared/prompts'
 import { lessonById } from '@shared/curriculum'
 
@@ -118,5 +118,44 @@ describe('Google xato sabablarini aniqlash', () => {
   it('noma\'lum xatoda HTTP kodi va Google xabari, kalit esa yashiriladi', async () => {
     const p = run(400, err('INVALID_ARGUMENT', 'Bad thing with AIzaSyA1234567890abcdefghijklmnop'))
     await expect(p).rejects.toThrow(/HTTP 400[\s\S]*\[KALIT YASHIRILDI\]/)
+  })
+})
+
+describe('Model zanjiri (fallback)', () => {
+  const retired = { error: { status: 'NOT_FOUND', message: 'This model models/gemini-2.5-flash is no longer available to new users.' } }
+  const jsonRes = (status: number, p: unknown) => new Response(JSON.stringify(p), { status })
+
+  it('yopilgan model (404) → keyingi modelga o\'tadi va qaysi model ishlaganini qaytaradi', async () => {
+    const urls: string[] = []; const failed: string[] = []
+    const fetchImpl = (async (u: string) => { urls.push(u); return u.includes('/gemini-2.5-flash:') ? jsonRes(404, retired) : ok([ev('salom')]) }) as any
+    const r = await streamWithFallback({ key: 'K', models: modelChain('gemini-2.5-flash'), body, fetchImpl, onChunk: () => {}, sleep: async () => {}, onModelFail: (m) => failed.push(m) })
+    expect(r.text).toBe('salom'); expect(r.model).toBe(DEFAULT_MODEL); expect(failed).toEqual(['gemini-2.5-flash']); expect(urls).toHaveLength(2)
+  })
+  it('503 band bo\'lsa uzoq kutmasdan keyingisini sinaydi', async () => {
+    const waits: number[] = []
+    const fetchImpl = (async (u: string) => (u.includes(`/${DEFAULT_MODEL}:`) ? new Response('', { status: 503 }) : ok([ev('ok')]))) as any
+    const r = await streamWithFallback({ key: 'K', models: modelChain(DEFAULT_MODEL), body, fetchImpl, onChunk: () => {}, sleep: async (ms) => { waits.push(ms) } })
+    expect(r.model).not.toBe(DEFAULT_MODEL); expect(waits.length).toBeLessThanOrEqual(1)
+  })
+  it('noto\'g\'ri kalitda boshqa modellarni sinamaydi', async () => {
+    let n = 0
+    const fetchImpl = (async () => { n++; return jsonRes(400, { error: { status: 'INVALID_ARGUMENT', message: 'API key not valid.' } }) }) as any
+    await expect(streamWithFallback({ key: 'K', models: modelChain(DEFAULT_MODEL), body, fetchImpl, onChunk: () => {}, sleep: async () => {} })).rejects.toMatchObject({ code: 'key' })
+    expect(n).toBe(1)
+  })
+  it('hammasi ishlamasa oxirgi xato qaytadi', async () => {
+    const fetchImpl = (async () => jsonRes(404, retired)) as any
+    await expect(streamWithFallback({ key: 'K', models: ['a', 'b'], body, fetchImpl, onChunk: () => {}, sleep: async () => {} })).rejects.toMatchObject({ code: 'model' })
+  })
+  it('zanjirda takror yo\'q, birinchi — tanlangan model', () => {
+    const c = modelChain('gemini-3.5-flash-lite'); expect(c[0]).toBe('gemini-3.5-flash-lite'); expect(new Set(c).size).toBe(c.length)
+  })
+  it('eski modellar aniqlanadi', () => {
+    expect(isRetiredModel('gemini-2.5-flash')).toBe(true); expect(isRetiredModel('gemini-2.5-pro')).toBe(true); expect(isRetiredModel('gemini-1.5-pro')).toBe(true)
+    expect(isRetiredModel('gemini-3.5-flash')).toBe(false); expect(isRetiredModel('gemini-pro-latest')).toBe(false)
+  })
+  it('yangi formatdagi (AQ.) kalitlar ham loglardan yashiriladi', () => {
+    const k = 'AQ.Test_' + 'x'.repeat(40)
+    expect(redact(`xato: ${k} bilan`)).toBe('xato: [KALIT YASHIRILDI] bilan')
   })
 })

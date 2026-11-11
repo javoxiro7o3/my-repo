@@ -44,7 +44,7 @@ AI funksiyalari uchun shaxsiy Gemini kaliti kerak. Premium darslar va barcha 15 
 1. [aistudio.google.com](https://aistudio.google.com/) ga Google akkaunt bilan kiring.
 2. **Get API key → Create API key** ni bosing va kalitni nusxalang.
 3. Ilovada **Sozlamalar → Gemini API kaliti** bo'limiga qo'ying va **Tekshirish**ni bosing.
-4. Model tanlang. `gemini-2.5-flash` tez va arzon (standart), `gemini-2.5-pro` esa chuqurroq tushuntiradi.
+4. Model: standart `gemini-3.5-flash` (tez, bepul tarifda ishlaydi). Tanlangan model ishlamasa, ilova avtomatik ravishda ishlaydigan modelga o'tadi. `gemini-pro-latest` chuqurroq tushuntiradi, lekin Google AI Studio'da billing talab qiladi.
 
 **Kalit xavfsizligi:**
 - Kalit Windows'ning DPAPI tizimi bilan shifrlanib, faqat sizning kompyuteringizda saqlanadi (Electron `safeStorage`).

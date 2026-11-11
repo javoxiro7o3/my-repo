@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AiEvent, AiRequest } from '@shared/types'
-import { GeminiError, ERR_TEXT, cacheKeyParts, streamGemini, redact, type GeminiBody } from '@shared/geminiCore'
+import { GeminiError, ERR_TEXT, cacheKeyParts, modelChain, streamWithFallback, redact, type GeminiBody } from '@shared/geminiCore'
 import { PROMPT_VERSION, buildRequest } from '@shared/prompts'
 import { lessonById } from '@shared/curriculum'
 import { sectionMeta } from '@shared/sections'
@@ -35,10 +35,11 @@ const baseUrl = () => process.env.DA_GEMINI_BASE || undefined
 const CACHEABLE = new Set(['section', 'recap', 'explain', 'review'])
 const active = new Map<string, AbortController>()
 
-export async function testKey(key: string, model: string): Promise<{ ok: boolean; message: string }> {
+export async function testKey(key: string, model: string): Promise<{ ok: boolean; message: string; model?: string }> {
   try {
-    await streamGemini({ key, model, baseUrl: baseUrl(), maxRetries: 1, onChunk: () => {}, body: { contents: [{ role: 'user', parts: [{ text: 'Faqat "OK" deb javob ber.' }] }], generationConfig: { maxOutputTokens: 16, temperature: 0 } } })
-    return { ok: true, message: 'Kalit ishlayapti ✓' }
+    // maxOutputTokens: "thinking" modellar fikrlash tokenlarini ham shu limitdan sarflaydi — 16 yetmaydi
+    const r = await streamWithFallback({ key, models: modelChain(model), baseUrl: baseUrl(), maxRetries: 1, onChunk: () => {}, body: { contents: [{ role: 'user', parts: [{ text: 'Faqat "OK" deb javob ber.' }] }], generationConfig: { maxOutputTokens: 512, temperature: 0 } } })
+    return { ok: true, model: r.model, message: r.model === model ? `Kalit ishlayapti ✓ (model: ${r.model})` : `Kalit ishlayapti ✓\n«${model}» bu kalitda ishlamadi — «${r.model}» modeliga o'tkazildi.` }
   } catch (e) {
     if (e instanceof GeminiError) return { ok: e.code === 'rate', message: e.code === 'rate' ? `Kalit to'g'ri, lekin hozir limit tugagan (429). Saqlash mumkin.\n\n${e.message}` : e.message }
     return { ok: false, message: ERR_TEXT.unknown }
@@ -79,13 +80,17 @@ export async function startAi(store: Store, req: AiRequest, sender: WebContents)
   }
   const ac = new AbortController()
   active.set(req.id, ac)
+  let failedPrimary = false
   try {
-    const r = await streamGemini({
-      key, model, body, baseUrl: baseUrl(), signal: ac.signal,
+    const r = await streamWithFallback({
+      key, models: modelChain(model), body, baseUrl: baseUrl(), signal: ac.signal,
+      // Doimiy muammo (model yopilgan / limit 0) bo'lsa — ishlagan modelni sozlamalarga yozamiz
+      onModelFail: (m, e) => { (e.code === 'model' || e.code === 'quota') && m === model && (failedPrimary = true) },
       onChunk: (text) => send({ id: req.id, type: 'chunk', text }),
       onWait: (seconds, attempt) => send({ id: req.id, type: 'status', state: 'waiting', seconds, attempt })
     })
     store.addUsage(r.inTokens, r.outTokens)
+    if (failedPrimary && r.model !== model) store.setSettings(req.pro ? { proModel: r.model } : { model: r.model })
     if (!r.text.trim()) return send({ id: req.id, type: 'error', code: 'unknown', message: 'Model bo\'sh javob qaytardi. Qayta urinib ko\'ring.' })
     if (ck) store.cachePut(ck, { lessonId: req.lessonId, section: req.section, model, promptVersion: PROMPT_VERSION, content: r.text, tokens: r.outTokens })
     if (req.kind === 'section' && lesson && req.section && req.section !== 'quiz')
